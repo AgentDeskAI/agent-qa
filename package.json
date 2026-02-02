@@ -6,7 +6,7 @@
   "description": "Framework-based AI agent testing with convention over configuration",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/agent-qa.git"
+    "url": "https://github.com/AgentDeskAI/agent-qa.git"
   },
   "license": "MIT",
   "scripts": {
@@ -19,9 +19,14 @@
     "lint": "pnpm -r lint",
     "lint:fix": "pnpm -r lint:fix",
     "check": "pnpm lint && pnpm type-check",
-    "clean": "pnpm -r clean && rm -rf node_modules"
+    "clean": "pnpm -r clean && rm -rf node_modules",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "pnpm build && pnpm test && changeset publish"
   },
   "devDependencies": {
+    "@changesets/changelog-github": "^0.5.2",
+    "@changesets/cli": "^2.29.8",
     "@types/node": "^20.19.23",
     "@vitest/coverage-v8": "^4.0.16",
     "eslint": "^9.21.0",

@@ -47,9 +47,6 @@
     "zod": "^3.24.1",
     "zod-to-json-schema": "^3.24.1"
   },
-  "optionalDependencies": {
-    "@agent-qa/traces-tempo": "workspace:*"
-  },
   "peerDependencies": {
     "drizzle-orm": ">=0.30.0",
     "postgres": ">=3.0.0",

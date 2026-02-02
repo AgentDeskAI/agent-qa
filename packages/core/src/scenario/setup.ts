@@ -6,7 +6,7 @@
 
 import type { ProcessResult } from '../config/types.js';
 
-import type { ScenarioSetupStep, GenericInsertSetupStep, ProcessSetupStep } from './types.js';
+import type { ScenarioSetupStep } from './types.js';
 import { isInsertStep, isProcessStep } from './types.js';
 
 // =============================================================================

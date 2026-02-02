@@ -133,7 +133,7 @@ export async function analyzeModule(
     : resolve(process.cwd(), modulePath);
 
   // Register tsx for TypeScript support
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+   
   const { register } = await import('tsx/esm/api');
   const unregister = register();
 

@@ -7,7 +7,7 @@
 
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import lockfile from 'proper-lockfile';
 
 import {
@@ -170,7 +170,7 @@ export class InstanceRegistry {
   private async acquireLock(): Promise<void> {
     if (this.lockAcquired) return;
 
-    const stateDir = ensureStateDir();
+    const _stateDir = ensureStateDir();
     const registryPath = getRegistryPath();
 
     // Create empty file if it doesn't exist (lockfile requires existing file)

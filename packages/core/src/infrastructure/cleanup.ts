@@ -17,7 +17,6 @@ import {
   discoverAgentQAComposeProjects,
   discoverAgentQAFrpProcesses,
   discoverAgentQAStateFiles,
-  type DiscoveredResources,
 } from './discovery.js';
 import { getInstanceRegistry } from './instance-registry.js';
 

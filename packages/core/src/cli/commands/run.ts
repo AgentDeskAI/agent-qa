@@ -13,7 +13,6 @@ import type { Command } from 'commander';
 import { createHttpAgentFromConfig, createDrizzleAdapter, createMilvusAdapter, createNullDatabaseAdapter } from '../../adapters/index.js';
 import type { DatabaseAdapter, VectorStoreAdapter } from '../../adapters/types.js';
 import { loadConfigWithRaw, getDiagnosticsMaxLines, hasCustomDatabaseAdapter, getCustomDatabaseAdapter } from '../../config/index.js';
-import type { AgentQAConfig } from '../../config/index.js';
 import type { ResolvedConfig, ScenarioInfo, ScenarioResultInfo, HookContext } from '../../config/types.js';
 import { runGlobalSetup, runTeardown, type TeardownFn } from '../../lifecycle/global-setup.js';
 import { quickPreflightCheck } from '../../lifecycle/index.js';

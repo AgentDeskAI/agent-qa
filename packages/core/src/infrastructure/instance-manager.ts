@@ -9,7 +9,6 @@ import { join } from 'node:path';
 import { existsSync, writeFileSync, mkdirSync } from 'node:fs';
 
 import {
-  INFRASTRUCTURE_CONFIG,
   calculateInstancePorts,
   getInstanceContainerNames,
   getInstanceTmuxSession,

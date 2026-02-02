@@ -64,7 +64,7 @@ function composeExec(args: string[], cwd?: string): Buffer | null {
 function parseContainerJson(line: string): Record<string, unknown> | null {
   try {
     return JSON.parse(line) as Record<string, unknown>;
-  } catch (e) {
+  } catch {
     if (verboseMode) {
       console.warn(`[docker-compose] Failed to parse container JSON: ${line.slice(0, DEBUG_TEXT_TRUNCATE_LENGTH)}${line.length > DEBUG_TEXT_TRUNCATE_LENGTH ? '...' : ''}`);
     }

@@ -343,18 +343,15 @@ export class TestRunner {
     // Execute steps
     const stepReports: StepReport[] = [];
     let failedStepIndex: number | undefined;
-    let failedStepStartTime: Date | undefined;
 
     for (let i = 0; i < steps.length; i++) {
       const step = steps[i];
-      const stepStartTime = new Date();
       const report = await this.executeStep(step, context, i, options);
 
       stepReports.push(report);
 
       if (report.status === 'failed' || report.status === 'error') {
         failedStepIndex = i;
-        failedStepStartTime = stepStartTime;
 
         if (options.stopOnFailure !== false) {
           // Default is to stop on failure

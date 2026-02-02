@@ -1,0 +1,174 @@
+---
+title: Assertions Reference
+description: Complete guide to assertions in Agent QA scenarios
+---
+
+# Assertions Reference
+
+This guide covers all available assertions for validating agent behavior.
+
+## Tool Assertions
+
+Assert on tool calls made by the agent:
+
+```yaml
+tools:
+  createTask: 1                # Exact count
+  updateTask: { gte: 1 }       # At least 1
+  deleteTask: 0                # Not called
+  searchTasks:
+    count: { gte: 1 }
+    input:
+      query: { contains: "grocery" }
+```
+
+### Total Tool Calls
+
+```yaml
+totalToolCalls: { lte: 5 }     # At most 5 total tool calls
+```
+
+## Entity Assertions
+
+Verify entities were created:
+
+```yaml
+created:
+  - entity: tasks
+    as: $newTask               # Capture for later reference
+    fields:
+      title: "Buy milk"
+      status: "todo"
+      dueDate: { exists: true }
+```
+
+### Field Matchers
+
+```yaml
+fields:
+  title: "Exact match"
+  title: { contains: "milk" }
+  title: { regex: "^Buy.*$" }
+  count: { gt: 0 }
+  count: { gte: 1, lt: 10 }
+  dueDate: { exists: true }
+  deletedAt: { exists: false }
+  parentId: { ref: "$parentTask.id" }
+```
+
+## Response Assertions
+
+```yaml
+response:
+  contains: ["created", "successfully"]
+  notContains: ["error", "failed"]
+  regex: "Task .* created"
+```
+
+## Usage Assertions
+
+Assert on token consumption:
+
+```yaml
+usage:
+  inputTokens: { gt: 0 }
+  outputTokens: { gt: 0 }
+  totalTokens: { lt: 50000 }
+  callCount: { gte: 1 }
+  cacheReadTokens: { gt: 0 }   # Validate caching
+
+  # Compound assertions for non-deterministic behavior
+  anyOf:
+    - cacheCreationTokens: { gt: 0 }  # Cold cache
+    - cacheReadTokens: { gt: 0 }       # Warm cache
+```
+
+## Message Processing Assertions
+
+Assert on message preprocessing:
+
+```yaml
+messageProcessing:
+  condenser:
+    activated: true
+    condensedMessages: { gte: 4 }
+    summaryContains: ["task", "created"]
+  pruner:
+    activated: true
+```
+
+## Comparison Operators
+
+All numeric assertions support these operators:
+
+| Operator | Description |
+|----------|-------------|
+| `gt` | Greater than |
+| `gte` | Greater than or equal |
+| `lt` | Less than |
+| `lte` | Less than or equal |
+| `eq` | Equal to |
+
+### Examples
+
+```yaml
+# Single operator
+count: { gt: 5 }
+
+# Multiple operators (AND)
+count: { gte: 1, lt: 10 }
+
+# Exact value (shorthand)
+count: 5
+```
+
+## String Matchers
+
+| Matcher | Description |
+|---------|-------------|
+| `contains` | String contains substring |
+| `notContains` | String does not contain substring |
+| `regex` | String matches regular expression |
+| `exists` | Field exists (true) or doesn't exist (false) |
+
+### Examples
+
+```yaml
+fields:
+  title: { contains: "milk" }
+  description: { regex: "^Buy.*groceries$" }
+  deletedAt: { exists: false }
+```
+
+## Verify Step Assertions
+
+Use verify steps to check database state:
+
+```yaml
+- verify:
+    entity: tasks
+    filters:
+      status: "completed"
+      userId: "user-123"
+    count: 3
+
+- verify:
+    entity: tasks
+    id: $task.id
+    fields:
+      status: "completed"
+```
+
+## Wait Step Assertions
+
+Wait for async conditions with timeout:
+
+```yaml
+- wait:
+    entity: reminders
+    id: $reminder.id
+    until:
+      status: "delivered"
+    timeout: 30000              # 30 seconds
+    pollInterval: 1000          # Check every 1 second
+```

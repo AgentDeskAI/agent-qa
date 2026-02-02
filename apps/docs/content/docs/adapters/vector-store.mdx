@@ -1,0 +1,140 @@
+---
+title: Vector Store Adapter
+description: Implementing custom vector store adapters for Agent QA
+---
+
+# Vector Store Adapter
+
+The `VectorStoreAdapter` interface allows you to query vector stores for assertions.
+
+## Interface
+
+```typescript
+interface VectorStoreAdapter {
+  search(collection: string, query: VectorSearchQuery): Promise<VectorSearchResult[]>;
+  listCollections(): Promise<string[]>;
+  getCollection(name: string): Promise<CollectionSchema | null>;
+  cleanup?(): Promise<void>;
+}
+
+interface VectorSearchQuery {
+  vector?: number[];
+  text?: string;
+  limit?: number;
+  filters?: Record<string, unknown>;
+}
+
+interface VectorSearchResult {
+  id: string;
+  score: number;
+  payload: Record<string, unknown>;
+}
+
+interface CollectionSchema {
+  name: string;
+  vectorDimension: number;
+  fields: string[];
+}
+```
+
+## Built-in Milvus Adapter
+
+The built-in Milvus adapter is used when you configure `vectorStore`:
+
+```typescript
+vectorStore: {
+  type: 'milvus',
+  url: 'http://localhost:19530',
+  collections: ['documents', 'embeddings'],
+}
+```
+
+## Example: Pinecone Adapter
+
+```typescript
+import type { VectorStoreAdapter, VectorSearchQuery, VectorSearchResult } from '@agent-qa/core';
+import { Pinecone } from '@pinecone-database/pinecone';
+
+export function createPineconeAdapter(apiKey: string, environment: string): VectorStoreAdapter {
+  const client = new Pinecone({ apiKey, environment });
+
+  return {
+    async search(collection: string, query: VectorSearchQuery): Promise<VectorSearchResult[]> {
+      const index = client.index(collection);
+
+      const results = await index.query({
+        vector: query.vector,
+        topK: query.limit ?? 10,
+        filter: query.filters,
+        includeMetadata: true,
+      });
+
+      return results.matches.map(match => ({
+        id: match.id,
+        score: match.score ?? 0,
+        payload: match.metadata ?? {},
+      }));
+    },
+
+    async listCollections(): Promise<string[]> {
+      const indexes = await client.listIndexes();
+      return indexes.indexes?.map(i => i.name) ?? [];
+    },
+
+    async getCollection(name: string): Promise<CollectionSchema | null> {
+      try {
+        const index = client.index(name);
+        const stats = await index.describeIndexStats();
+        return {
+          name,
+          vectorDimension: stats.dimension ?? 0,
+          fields: ['id', 'score', 'metadata'],
+        };
+      } catch {
+        return null;
+      }
+    },
+  };
+}
+```
+
+## Using Custom Vector Store Adapter
+
+```typescript
+// agentqa.config.ts
+import { defineConfig } from '@agent-qa/core';
+import { createPineconeAdapter } from './pinecone-adapter';
+
+export default defineConfig({
+  name: 'MyApp',
+
+  agent: { /* ... */ },
+
+  vectorStore: {
+    adapter: createPineconeAdapter(
+      process.env.PINECONE_API_KEY!,
+      process.env.PINECONE_ENV!
+    ),
+  },
+});
+```
+
+## Vector Store Assertions
+
+Once configured, you can assert on vector store state in scenarios:
+
+```yaml
+steps:
+  - chat: "Index this document: 'Agent QA testing guide'"
+    tools:
+      indexDocument: 1
+
+  - verify:
+      vectorStore: documents
+      search:
+        text: "testing guide"
+        limit: 1
+      results:
+        count: { gte: 1 }
+        score: { gt: 0.8 }
+```

@@ -1,0 +1,128 @@
+---
+title: Agent Adapter
+description: Implementing custom agent adapters for Agent QA
+---
+
+# Agent Adapter
+
+The `AgentAdapter` interface allows you to customize how Agent QA communicates with your AI agent.
+
+## Interface
+
+```typescript
+interface AgentAdapter {
+  chat(options: ChatOptions): Promise<AgentResponse>;
+  cleanup?(): Promise<void>;
+}
+
+interface ChatOptions {
+  message: string;
+  userId: string;
+  conversationId?: string;
+  maxToolCalls?: number;
+  timeout?: number;
+}
+
+interface AgentResponse {
+  text: string;
+  toolCalls: ToolCall[];
+  conversationId: string;
+  correlationId?: string;
+  usage?: TokenUsage;
+  detailedUsage?: DetailedUsage;
+}
+```
+
+## Built-in HTTP Adapter
+
+The default adapter communicates via HTTP:
+
+```typescript
+import { createHttpAgentFromConfig } from '@agent-qa/core';
+
+const adapter = createHttpAgentFromConfig({
+  baseUrl: 'http://localhost:4000',
+  token: 'your-token',
+  chatEndpoint: '/v1/chat',
+});
+```
+
+## Example: WebSocket Adapter
+
+```typescript
+import type { AgentAdapter, ChatOptions, AgentResponse } from '@agent-qa/core';
+
+export function createWebSocketAdapter(url: string): AgentAdapter {
+  let ws: WebSocket | null = null;
+
+  return {
+    async chat(options: ChatOptions): Promise<AgentResponse> {
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        ws = new WebSocket(url);
+        await new Promise((resolve, reject) => {
+          ws!.onopen = resolve;
+          ws!.onerror = reject;
+        });
+      }
+
+      return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Chat timeout'));
+        }, options.timeout ?? 60000);
+
+        ws!.onmessage = (event) => {
+          clearTimeout(timeout);
+          const data = JSON.parse(event.data);
+          resolve({
+            text: data.response,
+            toolCalls: data.toolCalls ?? [],
+            conversationId: data.conversationId,
+            correlationId: data.correlationId,
+            usage: data.usage,
+          });
+        };
+
+        ws!.send(JSON.stringify({
+          message: options.message,
+          userId: options.userId,
+          conversationId: options.conversationId,
+        }));
+      });
+    },
+
+    async cleanup(): Promise<void> {
+      if (ws) {
+        ws.close();
+        ws = null;
+      }
+    },
+  };
+}
+```
+
+## Using Custom Agent Adapter
+
+```typescript
+// agentqa.config.ts
+import { defineConfig } from '@agent-qa/core';
+import { createWebSocketAdapter } from './ws-adapter';
+
+export default defineConfig({
+  name: 'MyApp',
+
+  agent: {
+    adapter: createWebSocketAdapter('ws://localhost:4000/chat'),
+  },
+});
+```
+
+## Programmatic Usage
+
+```typescript
+import { createTestRunner } from '@agent-qa/core';
+import { createWebSocketAdapter } from './ws-adapter';
+
+const runner = createTestRunner(config, {
+  agent: createWebSocketAdapter('ws://localhost:4000/chat'),
+});
+```

@@ -1,0 +1,53 @@
+---
+title: Test Scenarios
+description: Overview of YAML-based test scenarios in Agent QA
+---
+
+# Test Scenarios
+
+Agent QA uses YAML files to define test scenarios. This declarative approach makes tests easy to read, write, and maintain.
+
+## Overview
+
+A test suite contains multiple scenarios, each with one or more steps:
+
+```yaml
+name: My Test Suite
+scenarios:
+  - id: test-001
+    name: First test
+    steps:
+      - chat: "Hello"
+        response:
+          contains: ["hi", "hello"]
+```
+
+## Key Concepts
+
+### Scenarios
+
+A scenario is a single test case with:
+- A unique ID
+- Optional name and tags
+- Setup data (optional)
+- One or more steps
+
+### Steps
+
+Steps are the building blocks of scenarios:
+- **Chat steps** - Send messages to the agent and assert on responses
+- **Verify steps** - Check database state
+- **Wait steps** - Wait for async conditions
+
+### Assertions
+
+Each step can include assertions:
+- **Tool assertions** - Validate tool calls
+- **Response assertions** - Check agent responses
+- **Entity assertions** - Verify created/updated entities
+- **Usage assertions** - Monitor token consumption
+
+## Learn More
+
+- [YAML Syntax](/docs/scenarios/yaml-syntax) - Complete syntax reference
+- [Assertions](/docs/scenarios/assertions) - All available assertions

@@ -13,6 +13,8 @@
     "build": "pnpm -r build",
     "dev": "pnpm -r dev",
     "test": "pnpm -r test",
+    "docs:dev": "pnpm --filter @agent-qa/docs dev",
+    "docs:build": "pnpm --filter @agent-qa/docs build",
     "test:watch": "pnpm -r test:watch",
     "test:coverage": "pnpm -r test:coverage",
     "type-check": "pnpm -r type-check",

@@ -1,0 +1,33 @@
+---
+title: Adapters
+description: Overview of adapters in Agent QA
+---
+
+# Adapters
+
+Agent QA uses adapters to interact with external systems. This allows you to customize how tests communicate with your infrastructure.
+
+## Overview
+
+| Adapter | Purpose | Built-in Implementation |
+|---------|---------|------------------------|
+| `DatabaseAdapter` | Entity queries | Drizzle ORM |
+| `AgentAdapter` | AI agent communication | HTTP client |
+| `VectorStoreAdapter` | Vector store queries | Milvus |
+| `TracesProvider` | Trace collection | Grafana Tempo |
+
+## When to Use Custom Adapters
+
+Use a custom adapter when:
+
+- Your database uses a different ORM than Drizzle
+- Your agent uses a non-HTTP protocol (WebSocket, gRPC)
+- You use a different vector store than Milvus
+- You use a different tracing backend (LangFuse, Jaeger, Datadog)
+
+## Learn More
+
+- [Database Adapter](/docs/adapters/database) - Custom database adapters
+- [Agent Adapter](/docs/adapters/agent) - Custom agent communication
+- [Vector Store Adapter](/docs/adapters/vector-store) - Custom vector stores
+- [Traces Provider](/docs/adapters/traces-provider) - Custom tracing backends

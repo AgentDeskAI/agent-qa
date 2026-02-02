@@ -1,0 +1,155 @@
+---
+title: Getting Started
+description: Set up Agent QA for your AI agent project
+---
+
+# Getting Started
+
+This guide walks you through setting up Agent QA for your AI agent project.
+
+## Prerequisites
+
+- Node.js 20+
+- An AI agent with an HTTP chat endpoint
+- (Optional) PostgreSQL database with Drizzle ORM
+
+## Installation
+
+```bash
+npm install @agent-qa/core
+# or
+pnpm add @agent-qa/core
+# or
+yarn add @agent-qa/core
+```
+
+## Basic Setup
+
+### 1. Create Configuration File
+
+Create `agentqa.config.ts` in your project root:
+
+```typescript
+import { defineConfig } from '@agent-qa/core';
+
+export default defineConfig({
+  name: 'MyAgent',
+
+  // Agent endpoint configuration
+  agent: {
+    baseUrl: 'http://localhost:4000',
+    token: '$API_TOKEN', // Uses environment variable
+    chatEndpoint: '/v1/chat',
+  },
+
+  // Default user for tests
+  defaultUserId: 'test-user-001',
+});
+```
+
+### 2. Create Your First Scenario
+
+Create `scenarios/suite.yaml`:
+
+```yaml
+name: Basic Agent Tests
+scenarios:
+  - id: greeting-test
+    name: Agent responds to greeting
+    steps:
+      - chat: "Hello!"
+        response:
+          contains: ["hello", "hi"]
+```
+
+### 3. Run Tests
+
+```bash
+# Set environment variable
+export API_TOKEN=your-api-token
+
+# Run the test suite
+npx agentqa run scenarios/suite.yaml
+```
+
+## Adding Database Assertions
+
+If your agent modifies database state, you can add entity assertions:
+
+```typescript
+// agentqa.config.ts
+import { defineConfig } from '@agent-qa/core';
+import * as schema from './db/schema';
+
+export default defineConfig({
+  name: 'MyAgent',
+
+  agent: {
+    baseUrl: '$API_URL',
+    token: '$API_TOKEN',
+  },
+
+  database: {
+    url: '$DATABASE_URL',
+    entities: [
+      { table: schema.tasks, name: 'tasks', titleColumn: 'title' },
+      { table: schema.reminders, name: 'reminders', titleColumn: 'text' },
+    ],
+  },
+});
+```
+
+Then assert on created entities:
+
+```yaml
+steps:
+  - chat: "Create a task called 'Review PR'"
+    tools:
+      createTask: 1  # Expect createTask to be called once
+    created:
+      - entity: tasks
+        as: $newTask
+        fields:
+          title: "Review PR"
+          status: "todo"
+```
+
+## Infrastructure Setup
+
+For more complex setups, use `globalSetup` to start infrastructure:
+
+```typescript
+// agentqa.config.ts
+export default defineConfig({
+  name: 'MyAgent',
+  globalSetup: './agentqa.setup.ts',
+  // ...
+});
+```
+
+```typescript
+// agentqa.setup.ts
+import { tmuxProcess, waitForHealth } from '@agent-qa/core/helpers';
+
+export async function setup() {
+  // Start your API server
+  const api = await tmuxProcess.start({
+    name: 'api',
+    command: 'pnpm dev',
+    port: 4000,
+  });
+
+  await waitForHealth('http://localhost:4000/health');
+
+  // Return teardown function
+  return async () => {
+    await api.stop();
+  };
+}
+```
+
+## Next Steps
+
+- [Configuration Reference](/docs/configuration) - All config options
+- [YAML Scenarios](/docs/scenarios/yaml-syntax) - Scenario syntax guide
+- [CLI Reference](/docs/cli) - Command line options

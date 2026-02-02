@@ -1,0 +1,64 @@
+---
+title: Welcome to Agent QA
+description: Framework-based AI agent testing with convention over configuration
+---
+
+# Agent QA
+
+Agent QA is a testing framework designed specifically for AI agents. It provides a structured way to test your AI agent's behavior through YAML-based scenarios with powerful assertions.
+
+## Key Features
+
+- **YAML-based scenarios** - Write tests in a declarative format
+- **Database assertions** - Verify entities were created/updated correctly
+- **Tool call assertions** - Validate which tools were called and how many times
+- **Response assertions** - Check agent responses for expected content
+- **Token usage tracking** - Monitor and assert on token consumption
+- **Traces integration** - Capture and analyze execution traces
+
+## Quick Start
+
+```bash
+npm install @agent-qa/core
+```
+
+Create a configuration file `agentqa.config.ts`:
+
+```typescript
+import { defineConfig } from '@agent-qa/core';
+
+export default defineConfig({
+  name: 'MyAgent',
+  agent: {
+    baseUrl: '$API_URL',
+    token: '$API_TOKEN',
+  },
+});
+```
+
+Write your first scenario in `scenarios/suite.yaml`:
+
+```yaml
+name: Basic Tests
+scenarios:
+  - id: greeting
+    name: Agent responds to greeting
+    steps:
+      - chat: "Hello!"
+        response:
+          contains: ["hello", "hi"]
+```
+
+Run your tests:
+
+```bash
+npx agentqa run scenarios/suite.yaml
+```
+
+## Next Steps
+
+- [Getting Started](/docs/getting-started) - Full setup guide
+- [Configuration](/docs/configuration) - All configuration options
+- [Test Scenarios](/docs/scenarios) - Writing YAML scenarios
+- [Adapters](/docs/adapters) - Custom database and trace adapters
+- [CLI Reference](/docs/cli) - Command line options

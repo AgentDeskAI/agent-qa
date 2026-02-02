@@ -1,0 +1,80 @@
+{
+  "name": "@agent-qa/core",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "description": "Framework-based AI agent testing with convention over configuration",
+  "license": "MIT",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "bin": {
+    "agentqa": "./dist/bin/agent-qa.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js"
+    },
+    "./helpers": {
+      "types": "./dist/src/helpers/index.d.ts",
+      "import": "./dist/src/helpers/index.js"
+    },
+    "./traces": {
+      "types": "./dist/src/traces/index.d.ts",
+      "import": "./dist/src/traces/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src/",
+    "check": "pnpm lint && pnpm type-check",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@agent-qa/cost-registry": "workspace:*",
+    "chalk": "^5.4.1",
+    "commander": "^12.1.0",
+    "dotenv": "^16.4.7",
+    "p-limit": "^7.2.0",
+    "proper-lockfile": "^4.1.2",
+    "tsx": "^4.19.0",
+    "yaml": "^2.7.0",
+    "zod": "^3.24.1",
+    "zod-to-json-schema": "^3.24.1"
+  },
+  "optionalDependencies": {
+    "@agent-qa/traces-tempo": "workspace:*"
+  },
+  "peerDependencies": {
+    "drizzle-orm": ">=0.30.0",
+    "postgres": ">=3.0.0",
+    "@zilliz/milvus2-sdk-node": ">=2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "drizzle-orm": {
+      "optional": true
+    },
+    "postgres": {
+      "optional": true
+    },
+    "@zilliz/milvus2-sdk-node": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.23",
+    "@types/proper-lockfile": "^4.1.4",
+    "@vitest/coverage-v8": "^4.0.16",
+    "typescript": "^5.7.3",
+    "vitest": "^4.0.15"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ]
+}

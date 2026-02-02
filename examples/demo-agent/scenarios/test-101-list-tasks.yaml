@@ -1,0 +1,26 @@
+# =============================================================================
+# TEST-101: List Tasks
+# =============================================================================
+# Verifies task listing functionality.
+# =============================================================================
+
+id: test-101-list-tasks
+name: "List tasks"
+tags: [demo, basic]
+description: "Create a task then list all tasks"
+
+steps:
+  # First create a task
+  - chat: "Create a task called 'Call mom'"
+    label: create-task
+    tools:
+      manageTasks: 1
+
+  # Then list tasks
+  - chat: "Show me all my tasks"
+    label: list-tasks
+    continueConversation: true
+    tools:
+      manageTasks: 1
+    response:
+      mentionsAny: ["Call mom", "task", "1"]

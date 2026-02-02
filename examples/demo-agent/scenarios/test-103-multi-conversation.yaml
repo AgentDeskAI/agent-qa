@@ -1,0 +1,59 @@
+# =============================================================================
+# TEST-103: Multi-Conversation Context
+# =============================================================================
+# Verifies that named conversations preserve context and can be switched.
+# =============================================================================
+
+id: test-103-multi-conversation
+name: "Multi-conversation context preservation"
+tags: [demo, conversation]
+description: "Verify that named conversations maintain separate contexts"
+
+steps:
+  # Step 1: Create a task in conv1
+  - chat: "Create a task called 'Buy groceries'"
+    label: create-in-conv1
+    conversation: conv1
+    tools:
+      manageTasks: 1
+    response:
+      mentionsAny: ["groceries", "created"]
+
+  # Step 2: New conversation (no conversation field) - no context
+  # This should NOT know about the groceries task from conversation history
+  - chat: "What task did I just ask you to create?"
+    label: new-conversation-no-context
+    response:
+      # In a new conversation, the agent has no prior context
+      # It should indicate it doesn't know or ask for clarification
+      notMentions: ["groceries", "Buy groceries"]
+
+  # Step 3: Back to conv1 - should know about groceries
+  - chat: "What task did I just create?"
+    label: back-to-conv1
+    conversation: conv1
+    response:
+      mentionsAny: ["groceries", "Buy"]
+
+  # Step 4: Create task in conv2 - separate context
+  - chat: "Create a task called 'Walk the dog'"
+    label: create-in-conv2
+    conversation: conv2
+    tools:
+      manageTasks: 1
+    response:
+      mentionsAny: ["dog", "Walk", "created"]
+
+  # Step 5: conv2 should know about dog, not groceries from history
+  - chat: "What task did I just create?"
+    label: verify-conv2
+    conversation: conv2
+    response:
+      mentionsAny: ["dog", "Walk"]
+
+  # Step 6: conv1 should still know about groceries
+  - chat: "Remind me what task I created earlier"
+    label: verify-conv1-still-works
+    conversation: conv1
+    response:
+      mentionsAny: ["groceries", "Buy"]

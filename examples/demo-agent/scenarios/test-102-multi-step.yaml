@@ -1,0 +1,20 @@
+# =============================================================================
+# TEST-102: Multi-Step Toolloop
+# =============================================================================
+# Verifies the agent can handle multiple tool calls in one request.
+# =============================================================================
+
+id: test-102-multi-step
+name: "Multi-step toolloop"
+tags: [demo, toolloop]
+description: "Verify the agent executes multiple tool calls for a complex request"
+
+steps:
+  - chat: "Create a task to call mom, then create another task to buy milk"
+    label: multi-step
+    tools:
+      manageTasks:
+        min: 2
+        max: 3
+    response:
+      mentionsAny: ["call mom", "buy milk", "created", "tasks"]

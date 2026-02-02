@@ -1,0 +1,25 @@
+{
+  "name": "@agent-qa/demo-agent",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Demo agent for agent-qa framework validation",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/server.ts",
+    "type-check": "tsc --noEmit",
+    "test": "agentqa run scenarios/suite.yaml"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.0",
+    "@agent-qa/core": "workspace:*",
+    "ai": "^6.0.5",
+    "fastify": "^5.0.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "tsx": "^4.0.0",
+    "@types/node": "^20.19.23"
+  }
+}

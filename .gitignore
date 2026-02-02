@@ -1,0 +1,34 @@
+# Dependencies
+node_modules
+.pnpm-store/*
+
+# Build outputs
+dist/
+*.tsbuildinfo
+
+# Testing
+**/coverage/
+**/diagnostics-output/
+**/test-results/
+
+# Environment
+.env*
+!.env.example
+
+# OS
+.DS_Store
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Misc
+*.pem

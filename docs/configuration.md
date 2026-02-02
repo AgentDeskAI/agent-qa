@@ -1,0 +1,262 @@
+# Configuration Reference
+
+Complete reference for `agentqa.config.ts` options.
+
+## Basic Structure
+
+```typescript
+import { defineConfig } from '@agent-qa/core';
+
+export default defineConfig({
+  name: string,           // Required: Product name
+  agent: AgentConfig,     // Required: Agent endpoint config
+  database?: DatabaseConfig | { adapter: DatabaseAdapter },
+  vectorStore?: VectorStoreConfig,
+  globalSetup?: string,   // Path to setup file
+  hooks?: LifecycleHooks,
+  defaultUserId?: string,
+  diagnostics?: DiagnosticsConfig,
+  reporters?: ReporterConfig[],
+  verbose?: boolean,
+  stopOnFailure?: boolean,
+  defaultTimeout?: number,
+});
+```
+
+## Agent Configuration
+
+```typescript
+interface AgentConfig {
+  /** Base URL of the API (supports $ENV_VAR syntax) */
+  baseUrl: string;
+
+  /** Authentication token (supports $ENV_VAR syntax) */
+  token: string;
+
+  /** Chat endpoint path (default: '/v1/chat') */
+  chatEndpoint?: string;
+
+  /** Additional headers */
+  headers?: Record<string, string>;
+
+  /** Request timeout in milliseconds (default: 60000) */
+  timeout?: number;
+
+  /** Number of retry attempts for transient failures (default: 0) */
+  retries?: number;
+
+  /** Base delay in ms between retries (default: 1000) */
+  retryDelay?: number;
+
+  /** HTTP status codes to retry on (default: [502, 503, 504]) */
+  retryOn?: number[];
+}
+```
+
+### Example
+
+```typescript
+agent: {
+  baseUrl: '$API_URL',
+  token: '$API_TOKEN',
+  chatEndpoint: '/v1/chat',
+  timeout: 120000,
+  retries: 2,
+}
+```
+
+## Database Configuration
+
+### Using Drizzle ORM (Built-in)
+
+```typescript
+database: {
+  url: '$DATABASE_URL',
+  entities: [
+    { table: schema.tasks, name: 'tasks', titleColumn: 'title' },
+    { table: schema.reminders, name: 'reminders', titleColumn: 'text' },
+  ],
+  defaultUserIdColumn: 'userId',
+}
+```
+
+### Using Custom Adapter
+
+```typescript
+import { myCustomAdapter } from './my-adapter';
+
+database: {
+  adapter: myCustomAdapter,
+}
+```
+
+See [Custom Adapters](adapters.md) for implementing your own adapter.
+
+## Entity Configuration
+
+```typescript
+interface EntityConfig {
+  /** The Drizzle table object */
+  table: DrizzleTable;
+
+  /** Entity name used in scenarios */
+  name: string;
+
+  /** Column used for title-based lookups */
+  titleColumn?: string;
+
+  /** Column containing user ID (null to disable filtering) */
+  userIdColumn?: string | null;
+}
+```
+
+## Lifecycle Hooks
+
+```typescript
+hooks: {
+  beforeAll?: () => Promise<void>,
+  afterAll?: () => Promise<void>,
+  beforeEach?: (scenario: ScenarioInfo, context?: HookContext) => Promise<void>,
+  afterEach?: (scenario: ScenarioInfo, result: ScenarioResultInfo, context?: HookContext) => Promise<void>,
+}
+```
+
+### Example: Clean Up Before Each Test
+
+```typescript
+hooks: {
+  beforeEach: async (scenario, context) => {
+    const userId = context?.userId ?? 'default-user';
+    await db.delete(tasks).where(eq(tasks.userId, userId));
+  },
+}
+```
+
+## Global Setup
+
+The `globalSetup` file is like Vitest's globalSetup - it runs before all tests and can return a teardown function.
+
+```typescript
+// agentqa.config.ts
+globalSetup: './agentqa.setup.ts',
+```
+
+```typescript
+// agentqa.setup.ts
+import { tmuxProcess, waitForHealth } from '@agent-qa/core/helpers';
+
+export async function setup() {
+  const api = await tmuxProcess.start({
+    name: 'api',
+    command: 'pnpm dev',
+    port: 4000,
+  });
+
+  await waitForHealth('http://localhost:4000/health');
+
+  return async () => {
+    await api.stop();
+  };
+}
+```
+
+## Diagnostics Configuration
+
+Capture logs and traces on test failure.
+
+### Basic Configuration
+
+```typescript
+diagnostics: {
+  tmux: {
+    sessionName: 'api-server',
+    lines: 100,
+  },
+  outputDir: './diagnostics-output',
+}
+```
+
+### Traces Configuration (Recommended)
+
+Use a `TracesProvider` for flexible tracing backend support:
+
+```typescript
+import { createTempoProvider } from '@agent-qa/traces-tempo';
+
+diagnostics: {
+  traces: {
+    provider: createTempoProvider({
+      url: 'http://localhost:3200',
+    }),
+    includeSpans: true,  // Include span details in reports
+  },
+}
+```
+
+You can implement your own `TracesProvider` for other backends (LangFuse, Jaeger, etc.):
+
+```typescript
+import type { TracesProvider } from '@agent-qa/core/traces';
+
+const myProvider: TracesProvider = {
+  name: 'langfuse',
+  async isReachable() { /* ... */ },
+  async getTraceByCorrelationId(id) { /* ... */ },
+};
+
+diagnostics: {
+  traces: { provider: myProvider }
+}
+```
+
+### Full Diagnostics Example
+
+```typescript
+import { createTempoProvider } from '@agent-qa/traces-tempo';
+
+diagnostics: {
+  // Tmux log capture
+  tmux: {
+    sessionName: 'api-server',
+    lines: 100,
+    filterByTime: true,
+  },
+
+  // Traces (recommended way)
+  traces: {
+    provider: createTempoProvider({
+      url: 'http://localhost:3200',
+    }),
+    includeSpans: true,
+  },
+
+  // Output directory for diagnostic files
+  outputDir: './diagnostics-output',
+
+  // Max lines in console output
+  maxDiagnosticLines: 5000,
+}
+```
+
+## Reporter Configuration
+
+```typescript
+reporters: [
+  'console',
+  { type: 'console', verbose: true, showCosts: true },
+  { type: 'markdown', path: './reports', onlyOnFailure: true },
+]
+```
+
+## Environment Variables
+
+Values starting with `$` are resolved from environment variables:
+
+```typescript
+agent: {
+  baseUrl: '$API_URL',        // process.env.API_URL
+  token: '$API_TOKEN',        // process.env.API_TOKEN
+}
+```
+
+If an environment variable is not set, an error is thrown at config load time.

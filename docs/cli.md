@@ -1,0 +1,265 @@
+# CLI Reference
+
+Complete reference for the `agentqa` command line interface.
+
+## Global Options
+
+```
+agentqa [command] [options]
+
+Options:
+  -V, --version        Output version number
+  -h, --help           Display help
+```
+
+## run
+
+Run test scenarios.
+
+```bash
+agentqa run <suite> [options]
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--id <id>` | Filter by scenario ID |
+| `--tag <tag>` | Filter by tag |
+| `--grep <pattern>` | Filter by name pattern |
+| `--step <label>` | Run to specific step only |
+| `-v, --verbose` | Verbose output |
+| `--json` | Output results as JSON |
+| `--no-teardown` | Keep infrastructure running after tests |
+| `--skip-preflight` | Skip infrastructure checks |
+| `--timeout <ms>` | Chat timeout (default: 120000) |
+| `-c, --config <path>` | Path to config file |
+| `--bail` | Stop after first failure |
+| `--save-diagnostics` | Save diagnostics even on success |
+| `--runs <count>` | Run scenario multiple times |
+| `--continue-on-failure` | Continue after failures in multi-run |
+| `--parallel <n>` | Number of parallel workers |
+
+### Examples
+
+```bash
+# Run all scenarios
+agentqa run scenarios/suite.yaml
+
+# Run specific scenario
+agentqa run scenarios/suite.yaml --id task-001
+
+# Run with tag filter
+agentqa run scenarios/suite.yaml --tag smoke
+
+# Run with pattern match
+agentqa run scenarios/suite.yaml --grep "create task"
+
+# Run to specific step
+agentqa run scenarios/suite.yaml --id task-001 --step create-task
+
+# Run multiple times for flakiness detection
+agentqa run scenarios/suite.yaml --id task-001 --runs 5
+
+# Run in parallel
+agentqa run scenarios/suite.yaml --parallel 4
+
+# Save diagnostics for token analysis
+agentqa run scenarios/suite.yaml --id task-001 --save-diagnostics
+```
+
+## chat
+
+Interactive chat with the agent.
+
+```bash
+agentqa chat [options]
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `-m, --message <text>` | Message to send |
+| `-u, --user <id>` | User ID |
+| `-c, --conversation <id>` | Conversation ID |
+| `--config <path>` | Path to config file |
+
+### Examples
+
+```bash
+# Send a single message
+agentqa chat -m "Create a task called 'Test'" -u user_123
+
+# Continue a conversation
+agentqa chat -m "Mark it complete" -u user_123 -c conv_abc
+```
+
+## db
+
+Inspect database entities.
+
+```bash
+agentqa db <entity> [options]
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `-u, --user <id>` | Filter by user ID |
+| `--id <id>` | Lookup specific entity by ID |
+| `--config <path>` | Path to config file |
+
+### Examples
+
+```bash
+# List all tasks for a user
+agentqa db tasks -u user_123
+
+# Get specific task
+agentqa db tasks --id task_abc123
+```
+
+## setup
+
+Start infrastructure using globalSetup.
+
+```bash
+agentqa setup [options]
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `-v, --verbose` | Verbose output |
+| `-c, --config <path>` | Path to config file |
+
+This runs your `globalSetup` file but does NOT run teardown, so infrastructure stays running for manual testing.
+
+## teardown
+
+Stop running infrastructure.
+
+```bash
+agentqa teardown [options]
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `-v, --verbose` | Verbose output |
+
+## tokens
+
+Count tokens in text.
+
+```bash
+agentqa tokens [text] [options]
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `-m, --model <name>` | Model for counting (default: claude-haiku-4-5) |
+| `--json` | Output as JSON |
+
+### Examples
+
+```bash
+# Count tokens in text
+agentqa tokens "Hello, world!"
+
+# From stdin
+echo "some text" | agentqa tokens
+
+# With specific model
+agentqa tokens "Hello" -m claude-sonnet-4-5
+
+# JSON output
+agentqa tokens "Hello" --json
+```
+
+## schema-tokens
+
+Analyze token consumption of Zod schemas.
+
+```bash
+agentqa schema-tokens [path] [options]
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `-m, --model <name>` | Model for counting (default: claude-haiku-4-5) |
+| `-e, --export <name>` | Specific export to analyze |
+| `-p, --pattern <regex>` | Filter exports by pattern |
+| `-n, --name <name>` | Name for stdin schema |
+| `--json` | Output as JSON |
+| `--verbose` | Include full JSON schemas |
+| `--sort <field>` | Sort by: tokens, name |
+
+### Examples
+
+```bash
+# Analyze all schemas in a file
+agentqa schema-tokens ./src/types.ts
+
+# Filter to specific schemas
+agentqa schema-tokens ./types.ts --pattern "Schema$"
+
+# Analyze specific export
+agentqa schema-tokens ./types.ts --export TaskSchema
+
+# From stdin
+echo 'z.object({ name: z.string() })' | agentqa schema-tokens
+```
+
+## analyze-tokens
+
+Analyze token consumption from diagnostics output.
+
+```bash
+agentqa analyze-tokens <path> [options]
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `-f, --format <format>` | Output: table, json, markdown |
+| `--per-turn` | Show per-turn breakdown |
+| `--per-agent` | Show per-agent breakdown |
+| `--cache` | Focus on cache analysis |
+| `--top <n>` | Show top N consumers |
+
+### Examples
+
+```bash
+# Analyze diagnostics
+agentqa analyze-tokens ./diagnostics-output/test-001/*/http-responses.json
+
+# With per-turn breakdown
+agentqa analyze-tokens ./http-responses.json --per-turn
+
+# Focus on cache metrics
+agentqa analyze-tokens ./http-responses.json --cache
+```
+
+## Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `ANTHROPIC_API_KEY` | Required for token counting commands |
+| `DEBUG_ANTHROPIC_CACHE` | Enable cache debugging |
+
+## Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| 0 | All tests passed |
+| 1 | One or more tests failed |

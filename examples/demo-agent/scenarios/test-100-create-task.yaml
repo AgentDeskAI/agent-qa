@@ -1,0 +1,18 @@
+# =============================================================================
+# TEST-100: Create a Task
+# =============================================================================
+# Verifies basic task creation with ToolLoopAgent.
+# =============================================================================
+
+id: test-100-create-task
+name: "Create a task with ToolLoopAgent"
+tags: [demo, basic]
+description: "Verify that the agent can create a task using the manageTasks tool"
+
+steps:
+  - chat: "Create a task called 'Buy groceries'"
+    label: create-task
+    tools:
+      manageTasks: 1
+    response:
+      mentionsAny: ["groceries", "created", "task", "Buy"]

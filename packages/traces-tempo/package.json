@@ -1,0 +1,40 @@
+{
+  "name": "@agent-qa/traces-tempo",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "description": "Grafana Tempo traces provider for agent-qa framework",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "check": "pnpm lint && pnpm type-check",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@agent-qa/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@vitest/coverage-v8": "^4.0.16",
+    "typescript": "^5.7.3",
+    "vitest": "^4.0.3"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ]
+}

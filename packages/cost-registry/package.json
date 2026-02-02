@@ -1,0 +1,46 @@
+{
+  "name": "@agent-qa/cost-registry",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "description": "Unified cost registry for LLM pricing and token counting",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./rates": {
+      "types": "./dist/rates/index.d.ts",
+      "import": "./dist/rates/index.js"
+    },
+    "./counting": {
+      "types": "./dist/counting/index.d.ts",
+      "import": "./dist/counting/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "clean": "rm -rf dist",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "js-tiktoken": "^1.0.21"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.23",
+    "@vitest/coverage-v8": "^4.0.16",
+    "typescript": "^5.7.3",
+    "vitest": "^4.0.15"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ]
+}

@@ -1,0 +1,15 @@
+# =============================================================================
+# Demo Agent Test Suite
+# =============================================================================
+# Tests the agent-qa framework against a real ToolLoopAgent implementation.
+# Run with: ANTHROPIC_API_KEY=xxx agentqa run scenarios/suite.yaml
+# =============================================================================
+
+name: Demo Agent Tests
+description: ToolLoopAgent integration tests for agent-qa framework validation
+
+scenarios:
+  - test-100-create-task.yaml
+  - test-101-list-tasks.yaml
+  - test-102-multi-step.yaml
+  - test-103-multi-conversation.yaml

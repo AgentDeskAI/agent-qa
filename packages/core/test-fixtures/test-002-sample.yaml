@@ -1,0 +1,6 @@
+id: test-002
+name: Sample Test 2
+tags:
+  - e2e
+steps:
+  - chat: World

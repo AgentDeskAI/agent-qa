@@ -21,20 +21,24 @@ vi.mock('../../helpers/utils.js', async (importOriginal) => {
   };
 });
 
-// Mock net module
+// Create a shared mock socket that tests can configure
+const mockSocket = {
+  setTimeout: vi.fn().mockReturnThis(),
+  on: vi.fn().mockReturnThis(),
+  connect: vi.fn().mockReturnThis(),
+  destroy: vi.fn().mockReturnThis(),
+};
+
+// Mock net module with a class-like constructor
 vi.mock('node:net', () => {
-  const mockSocket = {
-    setTimeout: vi.fn(),
-    on: vi.fn(),
-    connect: vi.fn(),
-    destroy: vi.fn(),
-  };
+  const MockSocket = vi.fn(function(this: typeof mockSocket) {
+    Object.assign(this, mockSocket);
+    return this;
+  });
 
   return {
-    default: {
-      Socket: vi.fn(() => mockSocket),
-    },
-    Socket: vi.fn(() => mockSocket),
+    default: { Socket: MockSocket },
+    Socket: MockSocket,
   };
 });
 
@@ -44,6 +48,11 @@ import { sleep } from '../../helpers/utils.js';
 import net from 'node:net';
 
 const mockSleep = vi.mocked(sleep);
+
+// Helper to get the mock socket instance
+function getMockSocket() {
+  return mockSocket;
+}
 
 describe('health utilities', () => {
   beforeEach(() => {
@@ -56,64 +65,64 @@ describe('health utilities', () => {
 
   describe('waitForPort', () => {
     it('should resolve when port opens', async () => {
-      const mockSocket = new net.Socket();
-      vi.mocked(mockSocket.on).mockImplementation((event, callback) => {
+      const socket = getMockSocket();
+      socket.on.mockImplementation((event: string, callback: unknown) => {
         if (event === 'connect') {
           // Simulate immediate connection
           setTimeout(() => (callback as () => void)(), 0);
         }
-        return mockSocket;
+        return socket;
       });
 
       await expect(waitForPort(3000)).resolves.toBeUndefined();
     });
 
     it('should reject on timeout', async () => {
-      const mockSocket = new net.Socket();
-      vi.mocked(mockSocket.on).mockImplementation((event, callback) => {
+      const socket = getMockSocket();
+      socket.on.mockImplementation((event: string, callback: unknown) => {
         if (event === 'error') {
           // Simulate connection error
           setTimeout(() => (callback as (err: Error) => void)(new Error('connection refused')), 0);
         }
-        return mockSocket;
+        return socket;
       });
 
       await expect(waitForPort(3000, { timeout: 100 })).rejects.toThrow('Timeout waiting for port');
     });
 
     it('should handle custom host', async () => {
-      const mockSocket = new net.Socket();
-      vi.mocked(mockSocket.on).mockImplementation((event, callback) => {
+      const socket = getMockSocket();
+      socket.on.mockImplementation((event: string, callback: unknown) => {
         if (event === 'connect') {
           setTimeout(() => (callback as () => void)(), 0);
         }
-        return mockSocket;
+        return socket;
       });
 
       await waitForPort(3000, { host: '192.168.1.1' });
 
-      expect(mockSocket.connect).toHaveBeenCalledWith(3000, '192.168.1.1');
+      expect(socket.connect).toHaveBeenCalledWith(3000, '192.168.1.1');
     });
 
     it('should use default options', async () => {
-      const mockSocket = new net.Socket();
-      vi.mocked(mockSocket.on).mockImplementation((event, callback) => {
+      const socket = getMockSocket();
+      socket.on.mockImplementation((event: string, callback: unknown) => {
         if (event === 'connect') {
           setTimeout(() => (callback as () => void)(), 0);
         }
-        return mockSocket;
+        return socket;
       });
 
       await waitForPort(3000);
 
-      expect(mockSocket.connect).toHaveBeenCalledWith(3000, 'localhost');
-      expect(mockSocket.setTimeout).toHaveBeenCalledWith(DEFAULT_SOCKET_TIMEOUT_MS);
+      expect(socket.connect).toHaveBeenCalledWith(3000, 'localhost');
+      expect(socket.setTimeout).toHaveBeenCalledWith(DEFAULT_SOCKET_TIMEOUT_MS);
     });
 
     it('should retry until port opens', async () => {
       let connectionAttempts = 0;
-      const mockSocket = new net.Socket();
-      vi.mocked(mockSocket.on).mockImplementation((event, callback) => {
+      const socket = getMockSocket();
+      socket.on.mockImplementation((event: string, callback: unknown) => {
         if (event === 'error') {
           connectionAttempts++;
           if (connectionAttempts < 3) {
@@ -123,7 +132,7 @@ describe('health utilities', () => {
         if (event === 'connect' && connectionAttempts >= 2) {
           setTimeout(() => (callback as () => void)(), 0);
         }
-        return mockSocket;
+        return socket;
       });
 
       await expect(waitForPort(3000, { timeout: 5000 })).resolves.toBeUndefined();

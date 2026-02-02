@@ -1,0 +1,4 @@
+name: Test Suite
+scenarios:
+  - test-001-sample.yaml
+  - test-002-sample.yaml

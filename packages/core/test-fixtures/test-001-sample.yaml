@@ -1,0 +1,6 @@
+id: test-001
+name: Sample Test 1
+tags:
+  - smoke
+steps:
+  - chat: Hello

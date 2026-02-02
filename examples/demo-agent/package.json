@@ -8,7 +8,8 @@
     "build": "tsc",
     "dev": "tsx src/server.ts",
     "type-check": "tsc --noEmit",
-    "test": "agentqa run scenarios/suite.yaml"
+    "test": "echo \"Demo agent tests require running server - use 'pnpm test:e2e' instead\"",
+    "test:e2e": "agentqa run scenarios/suite.yaml"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.0",

@@ -7,35 +7,94 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  install:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'pnpm'
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Cache node_modules
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+            examples/*/node_modules
+          key: modules-${{ hashFiles('pnpm-lock.yaml') }}
 
-      - name: Build
-        run: pnpm build
-
+  lint:
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Restore node_modules
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+            examples/*/node_modules
+          key: modules-${{ hashFiles('pnpm-lock.yaml') }}
       - name: Lint
         run: pnpm lint
 
+  type-check:
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Restore node_modules
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+            examples/*/node_modules
+          key: modules-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Build (required for type-check)
+        run: pnpm build
       - name: Type check
         run: pnpm type-check
 
+  test:
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Restore node_modules
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+            examples/*/node_modules
+          key: modules-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Build (required for tests)
+        run: pnpm build
       - name: Test
         run: pnpm test
-
-      - name: Test coverage
-        run: pnpm test:coverage

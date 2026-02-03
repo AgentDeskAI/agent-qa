@@ -10,7 +10,9 @@ import * as MdxConfig from './source.config'
 const config = defineConfig({
   plugins: [
     mdx(MdxConfig),
-    nitro(),
+    nitro({
+      preset: 'vercel',
+    }),
     // this is the plugin that enables path aliases
     viteTsConfigPaths({
       projects: ['./tsconfig.json'],

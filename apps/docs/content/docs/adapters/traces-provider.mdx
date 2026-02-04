@@ -1,0 +1,187 @@
+---
+title: Traces Provider
+description: Implementing custom traces providers for Agent QA
+---
+
+# Traces Provider
+
+The `TracesProvider` interface allows you to integrate with any tracing backend for diagnostics.
+
+## Interface
+
+```typescript
+import type { TracesProvider, ParsedTrace, TraceSearchOptions } from '@agent-qa/core/traces';
+
+interface TracesProvider {
+  /** Provider name for display */
+  readonly name: string;
+
+  /** Check if the backend is reachable */
+  isReachable(): Promise<boolean>;
+
+  /** Get trace by correlation ID */
+  getTraceByCorrelationId(correlationId: string): Promise<ParsedTrace | null>;
+
+  /** Search traces (optional) */
+  searchTraces?(options: TraceSearchOptions): Promise<TraceSearchResult[]>;
+
+  /** Get detailed status (optional) */
+  getStatus?(): Promise<TracesProviderStatus>;
+
+  /** Cleanup resources (optional) */
+  cleanup?(): Promise<void>;
+}
+```
+
+## Trace Types
+
+```typescript
+interface ParsedTrace {
+  traceId: string;
+  serviceName: string;
+  rootSpanName: string;
+  startTime: Date;
+  endTime: Date;
+  duration: number;
+  status: SpanStatus;
+  spans: ParsedSpan[];
+  rootSpan: ParsedSpan | null;
+  metrics: TraceMetrics;
+}
+
+interface ParsedSpan {
+  id: string;
+  parentId: string | null;
+  traceId: string;
+  name: string;
+  displayName: string;
+  spanType: SpanType;
+  startTime: Date;
+  endTime: Date;
+  duration: number;
+  status: SpanStatus;
+  statusMessage: string;
+  attributes: Record<string, string | number | boolean>;
+  children: ParsedSpan[];
+  depth: number;
+}
+
+interface TraceMetrics {
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  cachedTokens: number;
+  costUsd: number;
+  agentCount: number;
+  toolCount: number;
+  dbOperations: number;
+  llmCalls: number;
+}
+```
+
+## Built-in Tempo Provider
+
+Use the built-in Grafana Tempo provider:
+
+```typescript
+import { createTempoProvider } from '@agent-qa/traces-tempo';
+
+diagnostics: {
+  traces: {
+    provider: createTempoProvider({
+      url: 'http://localhost:3200',
+    }),
+  },
+}
+```
+
+## Example: LangFuse Provider
+
+```typescript
+import type { TracesProvider, ParsedTrace } from '@agent-qa/core/traces';
+
+interface LangfuseConfig {
+  url: string;
+  apiKey?: string;
+}
+
+export function createLangfuseProvider(config: LangfuseConfig): TracesProvider {
+  return {
+    name: 'langfuse',
+
+    async isReachable(): Promise<boolean> {
+      try {
+        const response = await fetch(`${config.url}/health`);
+        return response.ok;
+      } catch {
+        return false;
+      }
+    },
+
+    async getTraceByCorrelationId(correlationId: string): Promise<ParsedTrace | null> {
+      // Fetch trace from LangFuse
+      const response = await fetch(`${config.url}/api/traces?sessionId=${correlationId}`, {
+        headers: config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {},
+      });
+      const data = await response.json();
+
+      if (!data.traces?.length) {
+        return null;
+      }
+
+      // Convert to ParsedTrace format
+      return convertLangfuseTrace(data.traces[0]);
+    },
+
+    async searchTraces(options): Promise<TraceSearchResult[]> {
+      // Implement search logic
+      const response = await fetch(`${config.url}/api/traces?limit=${options.limit}`, {
+        headers: config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {},
+      });
+      const data = await response.json();
+      return data.traces.map(convertToSearchResult);
+    },
+  };
+}
+
+// Helper to convert LangFuse trace to ParsedTrace
+function convertLangfuseTrace(trace: LangfuseTrace): ParsedTrace {
+  return {
+    traceId: trace.id,
+    serviceName: trace.name ?? 'unknown',
+    rootSpanName: trace.name ?? 'root',
+    startTime: new Date(trace.timestamp),
+    endTime: new Date(trace.timestamp + trace.duration),
+    duration: trace.duration,
+    status: trace.status === 'error' ? 'error' : 'ok',
+    spans: trace.observations.map(convertToSpan),
+    rootSpan: null, // Build tree from spans
+    metrics: calculateMetrics(trace),
+  };
+}
+```
+
+## Using Custom Traces Provider
+
+```typescript
+// agentqa.config.ts
+import { defineConfig } from '@agent-qa/core';
+import { createLangfuseProvider } from './langfuse-provider';
+
+export default defineConfig({
+  name: 'MyApp',
+  agent: { /* ... */ },
+  diagnostics: {
+    traces: {
+      provider: createLangfuseProvider({
+        url: 'https://langfuse.example.com',
+        apiKey: process.env.LANGFUSE_API_KEY,
+      }),
+    },
+  },
+});
+```
+
+## Reference Implementation
+
+See `@agent-qa/traces-tempo` for a complete reference implementation of a traces provider.

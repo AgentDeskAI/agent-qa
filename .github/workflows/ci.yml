@@ -27,6 +27,7 @@ jobs:
             node_modules
             packages/*/node_modules
             examples/*/node_modules
+            apps/*/node_modules
           key: modules-${{ hashFiles('pnpm-lock.yaml') }}
 
   lint:
@@ -47,6 +48,7 @@ jobs:
             node_modules
             packages/*/node_modules
             examples/*/node_modules
+            apps/*/node_modules
           key: modules-${{ hashFiles('pnpm-lock.yaml') }}
       - name: Lint
         run: pnpm lint
@@ -69,6 +71,7 @@ jobs:
             node_modules
             packages/*/node_modules
             examples/*/node_modules
+            apps/*/node_modules
           key: modules-${{ hashFiles('pnpm-lock.yaml') }}
       - name: Build (required for type-check)
         run: pnpm build
@@ -93,6 +96,7 @@ jobs:
             node_modules
             packages/*/node_modules
             examples/*/node_modules
+            apps/*/node_modules
           key: modules-${{ hashFiles('pnpm-lock.yaml') }}
       - name: Build (required for tests)
         run: pnpm build

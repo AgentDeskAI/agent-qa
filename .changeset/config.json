@@ -10,5 +10,5 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["demo-agent"]
+  "ignore": ["@agent-qa/demo-agent", "@agent-qa/docs"]
 }

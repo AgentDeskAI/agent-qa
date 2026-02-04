@@ -1,0 +1,4 @@
+{
+  "title": "Adapters",
+  "pages": ["index", "database", "agent", "vector-store", "traces-provider"]
+}

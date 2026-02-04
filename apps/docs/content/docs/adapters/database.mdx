@@ -1,0 +1,174 @@
+---
+title: Database Adapter
+description: Implementing custom database adapters for Agent QA
+---
+
+# Database Adapter
+
+The `DatabaseAdapter` interface allows you to use any database with Agent QA.
+
+## Interface
+
+```typescript
+interface DatabaseAdapter {
+  /** Find an entity by ID */
+  findById(entity: string, id: string): Promise<QueryResult>;
+
+  /** Find an entity by title */
+  findByTitle(entity: string, title: string): Promise<QueryResult>;
+
+  /** List entities with optional filters */
+  list(entity: string, filters?: Record<string, unknown>): Promise<EntityRow[]>;
+
+  /** Insert a new entity */
+  insert(entity: string, data: Record<string, unknown>): Promise<{ id: string }>;
+
+  /** Update an entity by ID (optional) */
+  update?(entity: string, id: string, data: Record<string, unknown>): Promise<void>;
+
+  /** Delete an entity by ID (optional) */
+  delete?(entity: string, id: string): Promise<void>;
+
+  /** Get all entity schemas */
+  getSchemas(): EntitySchema[];
+
+  /** Get schema for a specific entity */
+  getSchema(entity: string): EntitySchema | undefined;
+
+  /** Optional cleanup on shutdown */
+  cleanup?(): Promise<void>;
+}
+```
+
+## Supporting Types
+
+```typescript
+interface QueryResult {
+  entity: EntityRow | null;
+  found: boolean;
+}
+
+type EntityRow = Record<string, unknown>;
+
+interface EntitySchema {
+  name: string;
+  tableName: string;
+  titleColumn?: string;
+  userIdColumn?: string | null;
+  columns: string[];
+}
+```
+
+## Example: In-Memory Adapter
+
+```typescript
+// my-adapter.ts
+import type { DatabaseAdapter, EntityRow, QueryResult, EntitySchema } from '@agent-qa/core';
+
+export function createInMemoryAdapter(): DatabaseAdapter {
+  const stores: Map<string, EntityRow[]> = new Map();
+  const schemas: EntitySchema[] = [
+    { name: 'tasks', tableName: 'tasks', titleColumn: 'title', columns: ['id', 'title', 'status'] },
+  ];
+
+  return {
+    async findById(entity: string, id: string): Promise<QueryResult> {
+      const store = stores.get(entity) ?? [];
+      const found = store.find(row => row.id === id);
+      return { entity: found ?? null, found: !!found };
+    },
+
+    async findByTitle(entity: string, title: string): Promise<QueryResult> {
+      const store = stores.get(entity) ?? [];
+      const schema = schemas.find(s => s.name === entity);
+      const titleCol = schema?.titleColumn ?? 'title';
+      const found = store.find(row => row[titleCol] === title);
+      return { entity: found ?? null, found: !!found };
+    },
+
+    async list(entity: string, filters?: Record<string, unknown>): Promise<EntityRow[]> {
+      let store = stores.get(entity) ?? [];
+      if (filters) {
+        store = store.filter(row =>
+          Object.entries(filters).every(([key, value]) => row[key] === value)
+        );
+      }
+      return store;
+    },
+
+    async insert(entity: string, data: Record<string, unknown>): Promise<{ id: string }> {
+      const id = crypto.randomUUID();
+      const row = { id, ...data };
+      const store = stores.get(entity) ?? [];
+      store.push(row);
+      stores.set(entity, store);
+      return { id };
+    },
+
+    async update(entity: string, id: string, data: Record<string, unknown>): Promise<void> {
+      const store = stores.get(entity) ?? [];
+      const index = store.findIndex(row => row.id === id);
+      if (index !== -1) {
+        store[index] = { ...store[index], ...data };
+      }
+    },
+
+    async delete(entity: string, id: string): Promise<void> {
+      const store = stores.get(entity) ?? [];
+      const index = store.findIndex(row => row.id === id);
+      if (index !== -1) {
+        store.splice(index, 1);
+      }
+    },
+
+    getSchemas(): EntitySchema[] {
+      return schemas;
+    },
+
+    getSchema(entity: string): EntitySchema | undefined {
+      return schemas.find(s => s.name === entity);
+    },
+
+    async cleanup(): Promise<void> {
+      stores.clear();
+    },
+  };
+}
+```
+
+## Using Custom Adapter in Config
+
+```typescript
+// agentqa.config.ts
+import { defineConfig } from '@agent-qa/core';
+import { createInMemoryAdapter } from './my-adapter';
+
+export default defineConfig({
+  name: 'MyApp',
+
+  agent: {
+    baseUrl: '$API_URL',
+    token: '$API_TOKEN',
+  },
+
+  database: {
+    adapter: createInMemoryAdapter(),
+  },
+});
+```
+
+## Programmatic Usage
+
+For more control, use the TestRunner directly:
+
+```typescript
+import { createTestRunner, createHttpAgentFromConfig } from '@agent-qa/core';
+import { createInMemoryAdapter } from './my-adapter';
+
+const runner = createTestRunner(config, {
+  agent: createHttpAgentFromConfig(config.agent),
+  database: createInMemoryAdapter(),
+});
+
+const result = await runner.runSuite('suite.yaml');
+```

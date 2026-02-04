@@ -280,13 +280,15 @@ function normalizeResponse(data: unknown): AgentResponse {
   }
 
   // Handle PocketCoach format: tool calls in usage.events
+  // Only include tool calls from the current turn (origin: 'current' or undefined for backward compatibility)
   if (toolCalls.length === 0 && dataObj.usage && typeof dataObj.usage === 'object') {
     const usage = dataObj.usage as Record<string, unknown>;
     if (Array.isArray(usage.events)) {
       for (const event of usage.events) {
         if (event && typeof event === 'object') {
           const e = event as Record<string, unknown>;
-          if (e.type === 'tool-call' && typeof e.toolName === 'string') {
+          const isCurrentTurn = e.origin === 'current' || e.origin === undefined;
+          if (e.type === 'tool-call' && typeof e.toolName === 'string' && isCurrentTurn) {
             toolCalls.push({
               name: e.toolName,
               args: (e.input && typeof e.input === 'object') ? e.input as Record<string, unknown> : {},

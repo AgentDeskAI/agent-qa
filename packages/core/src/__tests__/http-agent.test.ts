@@ -545,6 +545,120 @@ describe('HTTP Agent Adapter', () => {
       expect(response.toolCalls[0].name).toBe('createTask');
       expect(response.toolCalls[1].name).toBe('updateTask');
     });
+
+    it('should filter out tool calls from history (origin: history)', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: {
+            usage: {
+              events: [
+                // Tool call from previous turn (should be excluded)
+                { type: 'tool-call', toolName: 'createTask', input: { title: 'Old Task' }, origin: 'history' },
+                // Tool call from current turn (should be included)
+                { type: 'tool-call', toolName: 'updateTask', input: { id: '1', title: 'Updated' }, origin: 'current' },
+              ],
+            },
+          },
+        }),
+      });
+
+      const agent = createHttpAgent({
+        baseUrl: 'http://localhost:4000',
+        token: 'test-token',
+      });
+
+      const response = await agent.chat({ message: 'Test', userId: 'user_1' });
+
+      // Only the current turn tool call should be included
+      expect(response.toolCalls).toHaveLength(1);
+      expect(response.toolCalls[0].name).toBe('updateTask');
+      expect(response.toolCalls[0].args).toEqual({ id: '1', title: 'Updated' });
+    });
+
+    it('should include tool calls with origin: current', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: {
+            usage: {
+              events: [
+                { type: 'tool-call', toolName: 'searchTasks', input: { query: 'test' }, origin: 'current' },
+                { type: 'tool-call', toolName: 'createTask', input: { title: 'New' }, origin: 'current' },
+              ],
+            },
+          },
+        }),
+      });
+
+      const agent = createHttpAgent({
+        baseUrl: 'http://localhost:4000',
+        token: 'test-token',
+      });
+
+      const response = await agent.chat({ message: 'Test', userId: 'user_1' });
+
+      expect(response.toolCalls).toHaveLength(2);
+      expect(response.toolCalls[0].name).toBe('searchTasks');
+      expect(response.toolCalls[1].name).toBe('createTask');
+    });
+
+    it('should include tool calls without origin field (backward compatibility)', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: {
+            usage: {
+              events: [
+                // No origin field - should be included for backward compatibility
+                { type: 'tool-call', toolName: 'legacyTool', input: { data: 'test' } },
+              ],
+            },
+          },
+        }),
+      });
+
+      const agent = createHttpAgent({
+        baseUrl: 'http://localhost:4000',
+        token: 'test-token',
+      });
+
+      const response = await agent.chat({ message: 'Test', userId: 'user_1' });
+
+      expect(response.toolCalls).toHaveLength(1);
+      expect(response.toolCalls[0].name).toBe('legacyTool');
+    });
+
+    it('should handle multi-turn conversation with mixed origins', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: {
+            usage: {
+              events: [
+                // Multiple history tool calls (from previous turns)
+                { type: 'tool-call', toolName: 'createTask', input: { title: 'Task 1' }, origin: 'history' },
+                { type: 'tool-call', toolName: 'createTask', input: { title: 'Task 2' }, origin: 'history' },
+                // Current turn tool calls
+                { type: 'tool-call', toolName: 'deleteTask', input: { id: '1' }, origin: 'current' },
+                { type: 'tool-call', toolName: 'deleteTask', input: { id: '2' }, origin: 'current' },
+              ],
+            },
+          },
+        }),
+      });
+
+      const agent = createHttpAgent({
+        baseUrl: 'http://localhost:4000',
+        token: 'test-token',
+      });
+
+      const response = await agent.chat({ message: 'Delete all tasks', userId: 'user_1' });
+
+      // Should only include the 2 current turn tool calls, not the 2 history ones
+      expect(response.toolCalls).toHaveLength(2);
+      expect(response.toolCalls.every(tc => tc.name === 'deleteTask')).toBe(true);
+    });
   });
 
   describe('usage normalization', () => {

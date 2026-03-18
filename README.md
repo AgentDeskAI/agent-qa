@@ -2,6 +2,10 @@
 
 Framework-based AI agent testing with convention over configuration.
 
+Consider this a reference implementation for you to build your own testing framework. 
+
+This codebase is not yet ready for proper open source release.
+
 ## Overview
 
 Agent QA provides a structured approach to testing AI agents through YAML-based scenarios, built-in assertions, and flexible infrastructure management.
